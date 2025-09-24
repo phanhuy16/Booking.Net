@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookingApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250923154630_InitialCreate")]
+    [Migration("20250924151937_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -40,7 +40,7 @@ namespace BookingApp.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("DateJoined")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -50,16 +50,19 @@ namespace BookingApp.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -84,9 +87,6 @@ namespace BookingApp.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -108,18 +108,17 @@ namespace BookingApp.Migrations
                         {
                             Id = 1,
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f6c76287-54dd-4812-b52f-84b51d6a8caa",
-                            CreatedAt = new DateTime(2025, 9, 23, 15, 46, 30, 343, DateTimeKind.Utc).AddTicks(5129),
+                            ConcurrencyStamp = "f05aa2b4-21d4-427f-b33f-91f1597e0e8b",
+                            DateJoined = new DateTime(2025, 9, 24, 22, 19, 36, 931, DateTimeKind.Local).AddTicks(1221),
                             Email = "admin@gmail.com",
                             EmailConfirmed = true,
+                            FullName = "System Administrator",
                             LockoutEnabled = false,
-                            Name = "System Administrator",
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEJyeQpBFlEfZdCi+8xSO/ZTFfXZhBFvd3ZQq9UvgRRjPUteG8jS1kroWWuccbEa/TQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEFUhq2v49cxfC0syQXBQUHOBXlH79kt2QM5xhq/G9gg9YhVJ9yQnZSnq4m+nifFyUA==",
                             PhoneNumberConfirmed = false,
                             TwoFactorEnabled = false,
-                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             UserName = "admin"
                         });
                 });
@@ -289,6 +288,47 @@ namespace BookingApp.Migrations
                         .IsUnique();
 
                     b.ToTable("Payment");
+                });
+
+            modelBuilder.Entity("BookingApp.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Revoked")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshToken");
                 });
 
             modelBuilder.Entity("BookingApp.Models.Schedule", b =>
@@ -727,6 +767,17 @@ namespace BookingApp.Migrations
                     b.Navigation("Booking");
                 });
 
+            modelBuilder.Entity("BookingApp.Models.RefreshToken", b =>
+                {
+                    b.HasOne("BookingApp.Models.AppUser", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BookingApp.Models.Schedule", b =>
                 {
                     b.HasOne("BookingApp.Models.DoctorProfile", "DoctorProfile")
@@ -807,6 +858,8 @@ namespace BookingApp.Migrations
                     b.Navigation("Notifications");
 
                     b.Navigation("PatientProfile");
+
+                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("BookingApp.Models.DoctorProfile", b =>

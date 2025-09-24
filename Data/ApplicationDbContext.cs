@@ -18,6 +18,7 @@ namespace BookingApp.Data
         public DbSet<Service> Services { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -90,12 +91,18 @@ namespace BookingApp.Data
             builder.Entity<Schedule>()
                 .ToTable(t => t.HasCheckConstraint("CK_Schedule_Time", "[StartTime] < [EndTime]"));
 
-
             // MedicalRecord
             builder.Entity<MedicalRecord>()
                 .HasOne(m => m.PatientProfile)
                 .WithMany(p => p.MedicalRecords)
                 .HasForeignKey(m => m.PatientId);
+
+            // RefreshTokens
+            builder.Entity<RefreshToken>()
+                .HasOne(r => r.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Seed initial data for Specialties
             builder.Entity<Specialty>().HasData(
@@ -133,7 +140,7 @@ namespace BookingApp.Data
                 Email = "admin@gmail.com",
                 NormalizedEmail = "ADMIN@GMAIL.COM",
                 EmailConfirmed = true,
-                Name = "System Administrator"
+                FullName = "System Administrator"
             };
             adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin@123");
 

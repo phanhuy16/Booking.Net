@@ -6,13 +6,15 @@ namespace BookingApp.Models
     public class AppUser : IdentityUser<int>  
     {
         [Required, StringLength(255)]
-        public string Name { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public DateTime DateJoined { get; set; } = DateTime.Now;
+
+        public DateTime? LastLogin { get; set; }
 
         // relationships
-        public ICollection<Notification>? Notifications { get; set; }
         public DoctorProfile? DoctorProfile { get; set; }
         public PatientProfile? PatientProfile { get; set; }
+        public ICollection<Notification>? Notifications { get; set; }
+        public List<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }
