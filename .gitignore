@@ -11,6 +11,6 @@ obj/
 [Dd]ebug/
 [Rr]elease/
 [Bb]uild/
-firebase-service-account.json
 appsettings.json
 Migrations
+firebase-service-account.json
