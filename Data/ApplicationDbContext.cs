@@ -19,6 +19,7 @@ namespace BookingApp.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -30,7 +31,7 @@ namespace BookingApp.Data
                 .HasOne(b => b.PatientProfile)
                 .WithMany(p => p.Bookings)
                 .HasForeignKey(b => b.PatientId)
-                .OnDelete(DeleteBehavior.Cascade); 
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<Booking>()
                 .HasOne(b => b.DoctorProfile)
@@ -95,7 +96,21 @@ namespace BookingApp.Data
             builder.Entity<MedicalRecord>()
                 .HasOne(m => m.PatientProfile)
                 .WithMany(p => p.MedicalRecords)
-                .HasForeignKey(m => m.PatientId);
+                .HasForeignKey(m => m.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<MedicalRecord>()
+                .HasOne(m => m.DoctorProfile)
+                .WithMany()
+                .HasForeignKey(m => m.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<MedicalRecord>()
+                .HasOne(m => m.Booking)
+                .WithOne() // Mỗi booking chỉ có 1 hồ sơ y tế
+                .HasForeignKey<MedicalRecord>(m => m.BookingId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // RefreshTokens
             builder.Entity<RefreshToken>()
@@ -103,6 +118,19 @@ namespace BookingApp.Data
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Feedback
+            builder.Entity<Feedback>()
+                .HasOne(f => f.DoctorProfile)
+                .WithMany(d => d.Feedbacks)
+                .HasForeignKey(f => f.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Feedback>()
+               .HasOne(f => f.PatientProfile)
+                .WithMany(p => p.Feedbacks)
+               .HasForeignKey(f => f.PatientId)
+               .OnDelete(DeleteBehavior.Restrict);
 
             // Seed initial data for Specialties
             builder.Entity<Specialty>().HasData(
@@ -140,7 +168,8 @@ namespace BookingApp.Data
                 Email = "admin@gmail.com",
                 NormalizedEmail = "ADMIN@GMAIL.COM",
                 EmailConfirmed = true,
-                FullName = "System Administrator"
+                FullName = "System Administrator",
+                SecurityStamp = Guid.NewGuid().ToString()
             };
             adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin@123");
 

@@ -2,6 +2,7 @@
 using BookingApp.DTOs.Auth;
 using BookingApp.Interface.IService;
 using BookingApp.Models;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace BookingApp.Services
@@ -54,10 +55,13 @@ namespace BookingApp.Services
                     var accessToken = _tokenService.GenerateToken(user, roles);
                     var refreshToken = await _tokenService.GenerateAsync(user, ipAddress);
 
+                    _logger.LogInformation("User {UserName} registered successfully.", user.UserName);
+
                     return new ResponceDto { Success = true, UserName = user.UserName, AccessToken = accessToken, RefreshToken = refreshToken.Token };
                 }
                 else
                 {
+                    _logger.LogWarning("Role 'Patient' does not exist. User {UserName} registered without role.", user.UserName);
                     return new ResponceDto { Success = false, Errors = new[] { "Role does not exist" } };
                 }
             }
@@ -72,6 +76,7 @@ namespace BookingApp.Services
             var user = await _userManager.FindByNameAsync(loginDto.UserName);
             if (user == null)
             {
+                _logger.LogWarning("Login attempt failed. User {UserName} not found.", loginDto.UserName);
                 return new ResponceDto { Success = false, Errors = new[] { "User not found" } };
             }
 
@@ -87,6 +92,8 @@ namespace BookingApp.Services
 
             user.LastLogin = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
+
+            _logger.LogInformation("User {UserName} logged in successfully.", user.UserName);
 
             return new ResponceDto
             {
@@ -120,6 +127,54 @@ namespace BookingApp.Services
                 UserName = user.UserName!,
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken.Token
+            };
+        }
+
+        public async Task<ResponceDto> GoogleLoginAsync(GoogleLoginDto googleLoginDto)
+        {
+            // model.IdToken là token từ Google trả về (client gửi lên)
+            var payload = await GoogleJsonWebSignature.ValidateAsync(googleLoginDto.IdToken, new GoogleJsonWebSignature.ValidationSettings());
+
+            if(payload == null)
+            {
+                return new ResponceDto { Success = false, Errors = new[] { "Invalid Google token." } };
+            }
+
+            // Tìm user trong DB
+            var user = await _userManager.FindByEmailAsync(payload.Email);
+
+            if(user == null)
+            {
+                // Nếu chưa có thì tạo mới
+                user = new AppUser
+                {
+                    UserName = payload.Email,
+                    Email = payload.Email,
+                    FullName = payload.Name,
+                    EmailConfirmed = true
+                };
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    return new ResponceDto { Success = false, Errors = createResult.Errors.Select(e => e.Description) };
+                }
+
+                // Gán role mặc định
+                var roleResult = await _userManager.AddToRoleAsync(user, "Patient");
+            }
+
+            // Tạo JWT + Refresh token
+            var roles = await _userManager.GetRolesAsync(user);
+            var ipAddress = GetIpAddress();
+            var acsessToken = _tokenService.GenerateToken(user, roles);
+            var refreshToken = await _tokenService.GenerateAsync(user, ipAddress);
+
+            return new ResponceDto
+            {
+                Success = true,
+                UserName = user.UserName!,
+                AccessToken = acsessToken,
+                RefreshToken = refreshToken.Token
             };
         }
 

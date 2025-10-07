@@ -18,10 +18,14 @@ namespace BookingApp.Models
         public string Description { get; set; } = string.Empty;
         [StringLength(200)]
         public string Workplace { get; set; } = string.Empty;
+        public double AverageRating { get; set; } = 0;
+        public int TotalFeedbacks { get; set; } = 0;
 
         // relationships
         public AppUser User { get; set; } = null!;
         public Specialty Specialty { get; set; } = null!;
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+        public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     }
 }

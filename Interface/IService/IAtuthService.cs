@@ -7,5 +7,6 @@ namespace BookingApp.Interface.IService
         Task<ResponceDto> RegisterAsync(RegisterDto registerDto);
         Task<ResponceDto> LoginAsync(LoginDto loginDto);
         Task<ResponceDto> RefreshTokenAsync(string token, string ipAddress);
+        Task<ResponceDto> GoogleLoginAsync(GoogleLoginDto googleLoginDto);
     }
 }

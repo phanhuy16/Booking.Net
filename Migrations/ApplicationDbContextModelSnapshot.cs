@@ -105,16 +105,17 @@ namespace BookingApp.Migrations
                         {
                             Id = 1,
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f05aa2b4-21d4-427f-b33f-91f1597e0e8b",
-                            DateJoined = new DateTime(2025, 9, 24, 22, 19, 36, 931, DateTimeKind.Local).AddTicks(1221),
+                            ConcurrencyStamp = "ccf414d4-8c5f-4b2f-afa2-8fef723968c2",
+                            DateJoined = new DateTime(2025, 10, 7, 21, 19, 31, 696, DateTimeKind.Local).AddTicks(9308),
                             Email = "admin@gmail.com",
                             EmailConfirmed = true,
                             FullName = "System Administrator",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEFUhq2v49cxfC0syQXBQUHOBXlH79kt2QM5xhq/G9gg9YhVJ9yQnZSnq4m+nifFyUA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAENGUJ+o/tE6bMdv1wfYMO9WwfMJm2gs8SuQpg94bOeccBh5ZzItx1QMunjMUuRa70A==",
                             PhoneNumberConfirmed = false,
+                            SecurityStamp = "00f6d440-ad8e-4be1-9a2f-81a85b8cdd7d",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -167,6 +168,9 @@ namespace BookingApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("float");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -176,6 +180,9 @@ namespace BookingApp.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("SpecialtyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalFeedbacks")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
@@ -194,6 +201,88 @@ namespace BookingApp.Migrations
                         .IsUnique();
 
                     b.ToTable("DoctorProfile");
+                });
+
+            modelBuilder.Entity("BookingApp.Models.Feedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Feedback");
+                });
+
+            modelBuilder.Entity("BookingApp.Models.MedicalRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("MedicalRecord");
                 });
 
             modelBuilder.Entity("BookingApp.Models.Notification", b =>
@@ -342,6 +431,9 @@ namespace BookingApp.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DoctorProfileId")
+                        .HasColumnType("int");
+
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
 
@@ -354,6 +446,8 @@ namespace BookingApp.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DoctorId");
+
+                    b.HasIndex("DoctorProfileId");
 
                     b.ToTable("Schedule", t =>
                         {
@@ -448,6 +542,14 @@ namespace BookingApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("IconUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -483,32 +585,6 @@ namespace BookingApp.Migrations
                             Id = 5,
                             Name = "Psychiatry"
                         });
-                });
-
-            modelBuilder.Entity("MedicalRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("RecordedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("MedicalRecords");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
@@ -731,6 +807,52 @@ namespace BookingApp.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BookingApp.Models.Feedback", b =>
+                {
+                    b.HasOne("BookingApp.Models.DoctorProfile", "DoctorProfile")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BookingApp.Models.PatientProfile", "PatientProfile")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DoctorProfile");
+
+                    b.Navigation("PatientProfile");
+                });
+
+            modelBuilder.Entity("BookingApp.Models.MedicalRecord", b =>
+                {
+                    b.HasOne("BookingApp.Models.Booking", "Booking")
+                        .WithOne()
+                        .HasForeignKey("BookingApp.Models.MedicalRecord", "BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BookingApp.Models.DoctorProfile", "DoctorProfile")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BookingApp.Models.PatientProfile", "PatientProfile")
+                        .WithMany("MedicalRecords")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("DoctorProfile");
+
+                    b.Navigation("PatientProfile");
+                });
+
             modelBuilder.Entity("BookingApp.Models.Notification", b =>
                 {
                     b.HasOne("BookingApp.Models.AppUser", "User")
@@ -783,18 +905,11 @@ namespace BookingApp.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BookingApp.Models.DoctorProfile", null)
+                        .WithMany("Schedules")
+                        .HasForeignKey("DoctorProfileId");
+
                     b.Navigation("DoctorProfile");
-                });
-
-            modelBuilder.Entity("MedicalRecord", b =>
-                {
-                    b.HasOne("BookingApp.Models.PatientProfile", "PatientProfile")
-                        .WithMany("MedicalRecords")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PatientProfile");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -862,11 +977,17 @@ namespace BookingApp.Migrations
             modelBuilder.Entity("BookingApp.Models.DoctorProfile", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("Feedbacks");
+
+                    b.Navigation("Schedules");
                 });
 
             modelBuilder.Entity("BookingApp.Models.PatientProfile", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("Feedbacks");
 
                     b.Navigation("MedicalRecords");
                 });

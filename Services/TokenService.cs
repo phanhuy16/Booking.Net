@@ -27,7 +27,9 @@ namespace BookingApp.Services
                 {
                     new Claim(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
                     new Claim(ClaimTypes.Name, appUser.FullName ?? string.Empty),
-                    new Claim(ClaimTypes.Email, appUser.Email ?? string.Empty)
+                    new Claim(ClaimTypes.Email, appUser.Email ?? string.Empty),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),// ID duy nhất của token
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64) // thời điểm phát hành
                 };
 
             foreach (var userRole in role)

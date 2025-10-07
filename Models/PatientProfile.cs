@@ -26,5 +26,6 @@ namespace BookingApp.Models
         public AppUser User { get; set; } = null!;
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+        public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
     }
 }
