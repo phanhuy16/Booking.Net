@@ -18,22 +18,31 @@ namespace BookingApp.Controllers
             _service = service;
         }
 
-        [HttpGet("all")]
+        /// <summary>
+        /// [Admin] Get all medical records
+        /// </summary>
+        [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll() =>
+        public async Task<IActionResult> GetAllMedicalRecords() =>
             Ok(await _service.GetAllAsync());
 
-        [HttpGet("my-records")]
+        /// <summary>
+        /// [Patient] Get my medical records
+        /// </summary>
+        [HttpGet("patient/my-records")]
         [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> GetByPatient()
+        public async Task<IActionResult> GetMyMedicalRecords()
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             return Ok(await _service.GetByPatientAsync(userId));
         }
 
+        /// <summary>
+        /// [Patient/Doctor/Admin] Get medical record by ID
+        /// </summary>
         [HttpGet("{id}")]
         [Authorize(Roles = "Patient,Doctor,Admin")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetMedicalRecordById(int id)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             string role = User.FindFirstValue(ClaimTypes.Role)!;
@@ -41,14 +50,17 @@ namespace BookingApp.Controllers
             return record == null ? NotFound() : Ok(record);
         }
 
-        [HttpPost]
+        /// <summary>
+        /// [Doctor] Create new medical record (max 20MB attachment)
+        /// </summary>
+        [HttpPost("doctor")]
         [Authorize(Roles = "Doctor")]
-        [RequestSizeLimit(20_000_000)] // giới hạn 20MB
-        public async Task<IActionResult> Create([FromForm] MedicalRecordCreateDto dto, IFormFile? attachment)
+        [RequestSizeLimit(20_000_000)] // 20MB limit
+        public async Task<IActionResult> CreateMedicalRecord([FromForm] MedicalRecordCreateDto dto, IFormFile? attachment)
         {
             int doctorUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _service.CreateAsync(dto, doctorUserId, attachment);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetMedicalRecordById), new { id = result.Id }, result);
         }
     }
 }

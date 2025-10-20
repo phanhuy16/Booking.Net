@@ -14,17 +14,16 @@ namespace BookingApp.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<DoctorProfile>> GetAllAsync(bool includeDetails = false)
+        public IQueryable<DoctorProfile> GetAllAsync(bool includeDetails = false)
         {
             IQueryable<DoctorProfile> query = _context.DoctorProfiles
                 .Include(d => d.User)
                 .Include(d => d.Specialty);
 
             if (includeDetails)
-                // CHỈ GỌI Include mà không gán lại biến query
                 query = query.Include(d => d.Schedules).Include(d => d.Feedbacks);
 
-            return await query.ToListAsync();
+            return query; // Bỏ await và ToListAsync()
         }
 
         public async Task<DoctorProfile?> GetByIdAsync(int id, bool includeDetails = false)

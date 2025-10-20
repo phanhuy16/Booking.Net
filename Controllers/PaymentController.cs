@@ -17,62 +17,76 @@ namespace BookingApp.Controllers
             _service = service;
         }
 
-        // GET: api/payments
-        [HttpGet]
+        /// <summary>
+        /// [Admin] Get all payments
+        /// </summary>
+        [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllPayments()
         {
             return Ok(await _service.GetAllAsync());
         }
 
-        // GET: api/payments/booking/{bookingId}
+        /// <summary>
+        /// [Admin/Doctor/Patient] Get payment by booking ID
+        /// </summary>
         [HttpGet("booking/{bookingId}")]
         [Authorize(Roles = "Admin,Doctor,Patient")]
-        public async Task<IActionResult> GetByBooking(int bookingId)
+        public async Task<IActionResult> GetPaymentByBooking(int bookingId)
         {
             var result = await _service.GetByBookingIdAsync(bookingId);
             return result == null ? NotFound() : Ok(result);
         }
 
-        // GET: api/payments/patient/{patientId}
+        /// <summary>
+        /// [Admin/Patient] Get all payments by patient ID
+        /// </summary>
         [HttpGet("patient/{patientId}")]
         [Authorize(Roles = "Admin,Patient")]
-        public async Task<IActionResult> GetByPatient(int patientId)
+        public async Task<IActionResult> GetPaymentsByPatient(int patientId)
         {
             return Ok(await _service.GetByPatientAsync(patientId));
         }
 
-        // POST: api/payments
+        /// <summary>
+        /// [Admin/Doctor] Create new payment
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> Create([FromBody] PaymentCreateDto dto)
+        public async Task<IActionResult> CreatePayment([FromBody] PaymentCreateDto dto)
         {
             var result = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetByBooking), new { bookingId = result.BookingId }, result);
+            return CreatedAtAction(nameof(GetPaymentByBooking), new { bookingId = result.BookingId }, result);
         }
 
-        // PUT: api/payments/{id}
-        [HttpPut("{id}")]
+        /// <summary>
+        /// [Admin] Update payment status
+        /// </summary>
+        [HttpPut("admin/{id}/status")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] PaymentUpdateDto dto)
+        public async Task<IActionResult> UpdatePaymentStatus(int id, [FromBody] PaymentUpdateDto dto)
         {
             var updated = await _service.UpdateStatusAsync(id, dto);
             return updated ? NoContent() : NotFound();
         }
 
-        // DELETE: api/payments/{id}
-        [HttpDelete("{id}")]
+        /// <summary>
+        /// [Admin] Delete payment
+        /// </summary>
+        [HttpDelete("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeletePayment(int id)
         {
             var deleted = await _service.DeleteAsync(id);
             return deleted ? NoContent() : NotFound();
         }
 
-        // ✅ API tùy chọn: ép sync thủ công
-        [HttpPost("sync-booking/{id}")]
+        /// <summary>
+        /// [Admin] Manually sync booking status with payment
+        /// </summary>
+        [HttpPost("admin/{id}/sync-booking")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> SyncBooking(int id)
+        public async Task<IActionResult> SyncBookingStatus(int id)
         {
             var success = await _service.SyncBookingStatusAsync(id);
             return success ? Ok(new { message = "Booking synced successfully" }) : NotFound();

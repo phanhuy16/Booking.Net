@@ -14,7 +14,9 @@ namespace BookingApp.Mappers
             CreateMap<DoctorProfile, DoctorProfileDto>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.SpecialtyName, opt => opt.MapFrom(src => src.Specialty.Name))
-                .ForMember(dest => dest.JoinedAt, opt => opt.MapFrom(src => src.User.DateJoined));
+                .ForMember(dest => dest.JoinedAt, opt => opt.MapFrom(src => src.User.DateJoined))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User.PhoneNumber));
 
             CreateMap<DoctorProfile, DoctorProfileWithDetailsDto>()
                .IncludeBase<DoctorProfile, DoctorProfileDto>()

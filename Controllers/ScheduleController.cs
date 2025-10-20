@@ -17,69 +17,86 @@ namespace BookingApp.Controllers
             _service = service;
         }
 
-        // GET: api/schedules
-        [HttpGet]
+        /// <summary>
+        /// [Admin/Doctor] Get all schedules
+        /// </summary>
+        [HttpGet("admin")]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllSchedules()
         {
             return Ok(await _service.GetAllAsync());
         }
 
-        [HttpGet("paged")]
+        /// <summary>
+        /// [Admin/Doctor] Get schedules with pagination
+        /// </summary>
+        [HttpGet("admin/paged")]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> GetPaged([FromQuery] ScheduleQueryParams query)
+        public async Task<IActionResult> GetPagedSchedules([FromQuery] ScheduleQueryParams query)
         {
             var result = await _service.GetPagedAsync(query);
             return Ok(result);
         }
 
-        // GET: api/schedules/{id}
+        /// <summary>
+        /// [Admin/Doctor/Patient] Get schedule by ID
+        /// </summary>
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin,Doctor,Patient")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetScheduleById(int id)
         {
             var result = await _service.GetByIdAsync(id);
             return result == null ? NotFound() : Ok(result);
         }
 
-        // GET: api/schedules/doctor/{doctorId}
+        /// <summary>
+        /// [Admin/Doctor/Patient] Get all schedules by doctor ID
+        /// </summary>
         [HttpGet("doctor/{doctorId}")]
         [Authorize(Roles = "Admin,Doctor,Patient")]
-        public async Task<IActionResult> GetByDoctor(int doctorId)
+        public async Task<IActionResult> GetSchedulesByDoctor(int doctorId)
         {
             return Ok(await _service.GetByDoctorIdAsync(doctorId));
         }
 
-        // GET: api/schedules/doctor/{doctorId}/available
+        /// <summary>
+        /// [Public] Get available schedules by doctor ID
+        /// </summary>
         [HttpGet("doctor/{doctorId}/available")]
-        [AllowAnonymous] // Bệnh nhân cần xem để đặt lịch
-        public async Task<IActionResult> GetAvailable(int doctorId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAvailableSchedulesByDoctor(int doctorId)
         {
             return Ok(await _service.GetAvailableByDoctorAsync(doctorId));
         }
 
-        // POST: api/schedules
+        /// <summary>
+        /// [Admin/Doctor] Create new schedule
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> Create([FromBody] ScheduleCreateDto dto)
+        public async Task<IActionResult> CreateSchedule([FromBody] ScheduleCreateDto dto)
         {
             var result = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetScheduleById), new { id = result.Id }, result);
         }
 
-        // PUT: api/schedules/{id}
+        /// <summary>
+        /// [Admin/Doctor] Update schedule
+        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> Update(int id, [FromBody] ScheduleUpdateDto dto)
+        public async Task<IActionResult> UpdateSchedule(int id, [FromBody] ScheduleUpdateDto dto)
         {
             var updated = await _service.UpdateAsync(id, dto);
             return updated ? NoContent() : NotFound();
         }
 
-        // DELETE: api/schedules/{id}
+        /// <summary>
+        /// [Admin/Doctor] Delete schedule
+        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,Doctor")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteSchedule(int id)
         {
             var deleted = await _service.DeleteAsync(id);
             return deleted ? NoContent() : BadRequest(new { message = "Cannot delete schedule with active bookings." });

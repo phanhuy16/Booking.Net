@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApp.Controllers
 {
-    [Route("api/service")]
+    [Route("api/services")]
     [ApiController]
     public class ServiceController : ControllerBase
     {
@@ -21,30 +21,39 @@ namespace BookingApp.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// [Public] Get all services
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllServices()
         {
             var result = await _serviceManager.GetAllServicesAsync();
             return Ok(result);
         }
 
+        /// <summary>
+        /// [Admin/Doctor/Patient] Get service by ID
+        /// </summary>
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin,Doctor,Patient")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetServiceById(int id)
         {
             var result = await _serviceManager.GetServiceByIdAsync(id);
             return result == null ? NotFound(new { message = "Service not found." }) : Ok(result);
         }
 
+        /// <summary>
+        /// [Admin] Create new service
+        /// </summary>
         [HttpPost("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] ServiceCreateDto dto)
+        public async Task<IActionResult> CreateService([FromBody] ServiceCreateDto dto)
         {
             try
             {
                 var result = await _serviceManager.AddServiceAsync(dto);
-                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetServiceById), new { id = result.Id }, result);
             }
             catch (InvalidOperationException ex)
             {
@@ -53,13 +62,15 @@ namespace BookingApp.Controllers
             }
         }
 
+        /// <summary>
+        /// [Admin] Update service
+        /// </summary>
         [HttpPut("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] ServiceUpdateDto dto)
+        public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceUpdateDto dto)
         {
             if (id != dto.Id)
                 return BadRequest(new { message = "Service ID mismatch." });
-
             try
             {
                 var result = await _serviceManager.UpdateServiceAsync(id, dto);
@@ -75,9 +86,12 @@ namespace BookingApp.Controllers
             }
         }
 
+        /// <summary>
+        /// [Admin] Delete service
+        /// </summary>
         [HttpDelete("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteService(int id)
         {
             try
             {

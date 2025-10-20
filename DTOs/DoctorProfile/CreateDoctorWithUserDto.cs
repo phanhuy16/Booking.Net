@@ -1,12 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// DTOs/DoctorProfile/CreateDoctorWithUserDto.cs
+using System.ComponentModel.DataAnnotations;
 
 namespace BookingApp.DTOs.DoctorProfile
 {
-    public class DoctorProfileUpdateDto
+    public class CreateDoctorWithUserDto
     {
-        [Required]
-        public int Id { get; set; }
-
         [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;
 

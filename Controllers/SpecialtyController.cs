@@ -17,19 +17,28 @@ namespace BookingApp.Controllers
             _service = service;
         }
 
-        [HttpGet("get-all")]
+        /// <summary>
+        /// [Public] Get all specialties
+        /// </summary>
+        [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAll() =>
+        public async Task<IActionResult> GetAllSpecialties() =>
             Ok(await _service.GetAllAsync());
 
+        /// <summary>
+        /// [Public] Get specialty by ID
+        /// </summary>
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetSpecialtyById(int id)
         {
             var result = await _service.GetByIdAsync(id);
             return result == null ? NotFound() : Ok(result);
         }
 
+        /// <summary>
+        /// [Public] Get doctors by specialty with filters and pagination
+        /// </summary>
         [HttpGet("{id}/doctors")]
         [AllowAnonymous]
         public async Task<IActionResult> GetDoctorsBySpecialty(
@@ -43,7 +52,6 @@ namespace BookingApp.Controllers
         {
             var (doctors, totalPages) = await _service.GetDoctorsBySpecialtyIdAsync(
                 id, page, pageSize, sortBy, order, minRating, minExperience);
-
             return Ok(new
             {
                 currentPage = page,
@@ -56,25 +64,34 @@ namespace BookingApp.Controllers
             });
         }
 
-        [HttpPost("admin/add")]
+        /// <summary>
+        /// [Admin] Create new specialty
+        /// </summary>
+        [HttpPost("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromForm] SpecialtyCreateDto dto)
+        public async Task<IActionResult> CreateSpecialty([FromForm] SpecialtyCreateDto dto)
         {
             var result = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetSpecialtyById), new { id = result.Id }, result);
         }
 
-        [HttpPut("admin/update/{id}")]
+        /// <summary>
+        /// [Admin] Update specialty
+        /// </summary>
+        [HttpPut("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, [FromForm] SpecialtyUpdateDto dto)
+        public async Task<IActionResult> UpdateSpecialty(int id, [FromForm] SpecialtyUpdateDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
             return result == null ? NotFound() : Ok(result);
         }
 
-        [HttpDelete("admin/delete/{id}")]
+        /// <summary>
+        /// [Admin] Delete specialty
+        /// </summary>
+        [HttpDelete("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteSpecialty(int id)
         {
             try
             {

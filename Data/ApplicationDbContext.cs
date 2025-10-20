@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace BookingApp.Data
 {
@@ -20,6 +21,7 @@ namespace BookingApp.Data
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
+        public DbSet<OtpVerification> OtpVerifications { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -131,6 +133,14 @@ namespace BookingApp.Data
                 .WithMany(p => p.Feedbacks)
                .HasForeignKey(f => f.PatientId)
                .OnDelete(DeleteBehavior.Restrict);
+
+            // OTP Configuration
+            builder.Entity<OtpVerification>(entity =>
+            {
+                entity.HasIndex(o => o.Identifier);
+                entity.HasIndex(o => new { o.Identifier, o.Code });
+                entity.HasIndex(o => o.ExpiresAt);
+            });
 
             // Seed initial data for Specialties
             builder.Entity<Specialty>().HasData(

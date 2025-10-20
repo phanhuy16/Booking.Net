@@ -21,10 +21,22 @@ namespace BookingApp.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAll([FromQuery] string? specialty = null)
+        public async Task<IActionResult> GetAll(
+              [FromQuery] string? specialty = null,
+              [FromQuery] int _start = 0,
+              [FromQuery] int _end = 10,
+              [FromQuery] string? _sort = "Id",
+              [FromQuery] string? _order = "ASC")
         {
-            var result = await _service.GetAllAsync(specialty);
-            return Ok(result);
+            var (doctors, totalCount) = await _service.GetAllAsync(
+                _start,
+                _end - _start,
+                _sort ?? "Id",
+                _order ?? "ASC",
+                specialty
+            );
+
+            return Ok(doctors);
         }
 
         [HttpGet("{id}")]
@@ -55,6 +67,22 @@ namespace BookingApp.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // ⭐ Endpoint mới: Tạo Doctor kèm User (dùng cho React Admin)
+        [HttpPost("admin/create-with-user")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateDoctorWithUser([FromBody] CreateDoctorWithUserDto dto)
+        {
+            try
+            {
+                var result = await _service.CreateDoctorWithUserAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 

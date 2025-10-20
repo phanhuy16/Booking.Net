@@ -16,6 +16,7 @@ namespace BookingApp.Mappers
             CreateMap<PatientProfile, PatientProfileDto>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()));
 
             CreateMap<PatientProfile, PatientProfileWithDetailsDto>()

@@ -14,7 +14,7 @@ namespace BookingApp.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<PatientProfile>> GetAllAsync(bool includeDetails = false)
+        public IQueryable<PatientProfile> GetAllAsync(bool includeDetails = false)
         {
             IQueryable<PatientProfile> query = _context.PatientProfiles
                 .Include(p => p.User);
@@ -23,9 +23,9 @@ namespace BookingApp.Repositories
                 query = query
                     .Include(p => p.Bookings).ThenInclude(b => b.DoctorProfile).ThenInclude(d => d.User)
                     .Include(p => p.Bookings).ThenInclude(b => b.Service)
-                    .Include(p => p.MedicalRecords);
+                    .Include(p => p.MedicalRecords).AsSplitQuery();
 
-            return await query.ToListAsync();
+            return query;
         }
 
         public async Task<PatientProfile?> GetByIdAsync(int id, bool includeDetails = false)

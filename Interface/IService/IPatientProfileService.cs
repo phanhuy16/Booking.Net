@@ -4,7 +4,10 @@ namespace BookingApp.Interface.IService
 {
     public interface IPatientProfileService
     {
-        Task<IEnumerable<PatientProfileDto>> GetAllAsync();
+        Task<(IEnumerable<PatientProfileDto> PatientProfiles, int TotalCount)> GetAllAsync(int skip,
+              int take,
+              string sortBy,
+              string sortOrder);
         Task<PatientProfileWithDetailsDto?> GetByIdAsync(int id);
         Task<PatientDashboardDto?> GetDashboardAsync(int patientId);
         Task<PatientStatisticsDto?> GetStatisticsAsync(int patientId, DateTime from, DateTime to);

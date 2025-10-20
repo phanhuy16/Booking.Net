@@ -1,6 +1,6 @@
 ﻿namespace BookingApp.DTOs.Auth
 {
-    public class ResponceDto
+    public class ResponseDto
     {
         public bool Success { get; set; }
         public string UserName { get; set; } = null!;

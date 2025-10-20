@@ -7,8 +7,9 @@ using System.Security.Claims;
 
 namespace BookingApp.Controllers
 {
-    [Route("api/notification")]
+    [Route("api/notifications")]
     [ApiController]
+    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _service;
@@ -18,42 +19,53 @@ namespace BookingApp.Controllers
             _service = service;
         }
 
-        // 📩 Lấy danh sách thông báo của user hiện tại
-        [HttpGet("get-all")]
-        public async Task<IActionResult> GetAll()
+        /// <summary>
+        /// [All authenticated users] Get my notifications
+        /// </summary>
+        [HttpGet("my-notifications")]
+        public async Task<IActionResult> GetMyNotifications()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var notifications = await _service.GetAllByUserIdAsync(userId);
             return Ok(notifications);
         }
 
+        /// <summary>
+        /// [All authenticated users] Get notification by ID
+        /// </summary>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetNotificationById(int id)
         {
             var notif = await _service.GetByIdAsync(id);
             return notif == null ? NotFound() : Ok(notif);
         }
 
-        // 🆕 Admin có thể tạo thông báo thủ công
-        [HttpPost("create")]
+        /// <summary>
+        /// [Admin] Create notification manually
+        /// </summary>
+        [HttpPost("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] NotificationCreateDto dto)
+        public async Task<IActionResult> CreateNotification([FromBody] NotificationCreateDto dto)
         {
             var result = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetNotificationById), new { id = result.Id }, result);
         }
 
-        // ✅ Đánh dấu đã đọc
-        [HttpPut("mark-as-read/{id}")]
-        public async Task<IActionResult> MarkAsRead(int id)
+        /// <summary>
+        /// [All authenticated users] Mark notification as read
+        /// </summary>
+        [HttpPut("{id}/mark-as-read")]
+        public async Task<IActionResult> MarkNotificationAsRead(int id)
         {
             var result = await _service.MarkAsReadAsync(id);
             return result ? Ok(new { message = "Marked as read" }) : NotFound();
         }
 
-        // ❌ Xoá thông báo
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        /// <summary>
+        /// [All authenticated users] Delete notification
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
         {
             var result = await _service.DeleteAsync(id);
             return result ? NoContent() : NotFound();

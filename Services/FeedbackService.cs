@@ -32,6 +32,71 @@ namespace BookingApp.Services
             _notificationService = notificationService;
         }
 
+        /// <summary>
+        /// Get all feedbacks với pagination và sorting (Admin only)
+        /// </summary>
+        public async Task<(IEnumerable<FeedbackDto> Feedbacks, int TotalCount)> GetAllAsync(
+            int skip,
+            int take,
+            string sortBy,
+            string sortOrder,
+            int? doctorId = null)
+        {
+            var query = _context.Feedbacks
+                .Include(f => f.PatientProfile)
+                    .ThenInclude(p => p.User)
+                .Include(f => f.DoctorProfile)
+                    .ThenInclude(d => d.User)
+                .AsQueryable();
+
+            // Filter by doctor
+            if (doctorId.HasValue)
+            {
+                query = query.Where(f => f.DoctorId == doctorId.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            // Sorting
+            query = sortBy.ToLower() switch
+            {
+                "rating" => sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(f => f.Rating)
+                    : query.OrderBy(f => f.Rating),
+                "createdat" => sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(f => f.CreatedAt)
+                    : query.OrderBy(f => f.CreatedAt),
+                "doctorid" => sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(f => f.DoctorId)
+                    : query.OrderBy(f => f.DoctorId),
+                "patientid" => sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(f => f.PatientId)
+                    : query.OrderBy(f => f.PatientId),
+                _ => sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(f => f.Id)
+                    : query.OrderBy(f => f.Id)
+            };
+
+            var feedbacks = await query
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<FeedbackDto>>(feedbacks);
+
+            return (mapped, totalCount);
+        }
+
+        /// <summary>
+        /// Get feedback by ID
+        /// </summary>
+        public async Task<FeedbackDto?> GetByIdAsync(int id)
+        {
+            var feedback = await _repo.GetByIdAsync(id);
+
+            return feedback == null ? null : _mapper.Map<FeedbackDto>(feedback);
+        }
+
         public async Task<(IEnumerable<FeedbackDto> Feedbacks, int TotalPages)> GetByDoctorIdAsync(int doctorId, int page, int pageSize, int? currentUserId)
         {
             var totalCount = await _repo.CountByDoctorIdAsync(doctorId);
@@ -106,6 +171,9 @@ namespace BookingApp.Services
 
             await _repo.AddAsync(feedback);
             _logger.LogInformation("Feedback created for doctor {DoctorId} by patient {PatientId}", booking.DoctorId, booking.PatientId);
+
+            // ⭐ Update doctor rating
+            await UpdateDoctorRatingAsync(feedback.DoctorId);
 
             await _notificationService.CreateAsync(new NotificationCreateDto
             {

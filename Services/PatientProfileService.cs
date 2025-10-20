@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using BookingApp.Data;
+using BookingApp.DTOs.Feedback;
 using BookingApp.DTOs.PatientProfile;
 using BookingApp.Interface.IRepository;
 using BookingApp.Interface.IService;
 using BookingApp.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace BookingApp.Services
 {
@@ -26,10 +28,29 @@ namespace BookingApp.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<PatientProfileDto>> GetAllAsync()
+        public async Task<(IEnumerable<PatientProfileDto> PatientProfiles, int TotalCount)> GetAllAsync(int skip,
+           int take,
+           string sortBy,
+           string sortOrder)
         {
-            var patients = await _repo.GetAllAsync();
-            return _mapper.Map<IEnumerable<PatientProfileDto>>(patients);
+            var query = _repo.GetAllAsync(includeDetails: true); // Bỏ await
+
+            // Đếm tổng số TRƯỚC khi phân trang
+            var totalCount = await query.CountAsync();
+
+            // Sorting TRƯỚC KHI map - sort trên PatientProfile entity
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                query = sortOrder.ToUpper() == "DESC"
+                    ? query.OrderByDescending(p => p.Id)
+                    : query.OrderBy(p => p.Id);
+            }
+
+            // Pagination
+            var patients = await query.Skip(skip).Take(take).ToListAsync();
+            var mapped = _mapper.Map<IEnumerable<PatientProfileDto>>(patients);
+
+            return (mapped, totalCount);
         }
 
         public async Task<PatientProfileWithDetailsDto?> GetByIdAsync(int id)

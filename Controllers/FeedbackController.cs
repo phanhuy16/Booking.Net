@@ -20,6 +20,42 @@ namespace BookingApp.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Get all feedbacks (Admin only) - với pagination cho react-admin
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int _start = 0,
+            [FromQuery] int _end = 10,
+            [FromQuery] string? _sort = "Id",
+            [FromQuery] string? _order = "ASC",
+            [FromQuery] int? doctorId = null)
+        {
+            var (feedbacks, totalCount) = await _service.GetAllAsync(
+                _start,
+                _end - _start,
+                _sort ?? "Id",
+                _order ?? "ASC",
+                doctorId
+            );
+
+            var feedbacksList = feedbacks.ToList();
+
+            return Ok(feedbacksList);
+        }
+
+        /// <summary>
+        /// Get feedback by ID
+        /// </summary>
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Doctor,Patient")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var feedback = await _service.GetByIdAsync(id);
+            return feedback == null ? NotFound() : Ok(feedback);
+        }
+
         [HttpGet("doctor/{doctorId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetByDoctorId(

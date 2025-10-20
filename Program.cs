@@ -100,8 +100,12 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<FirebaseStorageService>();
+// Background service để cleanup expired OTP
+builder.Services.AddHostedService<OtpCleanupService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 {
@@ -112,7 +116,10 @@ builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequireUppercase = false;
     options.User.RequireUniqueEmail = true;
-    options.SignIn.RequireConfirmedAccount = false;
+
+    // Email confirmation required
+    options.SignIn.RequireConfirmedEmail = false; // Set true nếu bắt buộc verify email
+    options.SignIn.RequireConfirmedPhoneNumber = false; // Set true nếu bắt buộc verify phone
 }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(options =>
@@ -134,6 +141,7 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"]!)
             ),
+            ClockSkew = TimeSpan.Zero,
 
             // Map claim types cho JWT
             RoleClaimType = ClaimTypes.Role,
@@ -175,6 +183,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
+              .WithExposedHeaders("Content-Range", "X-Total-Count")
               .AllowCredentials(); // cần cho SignalR cookies / websockets
     });
 });
@@ -191,7 +200,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        // Thu gọn tất cả tags mặc định - ĐÚNG NHƯ HÌNH CỦA BẠN
+        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    });
 }
 
 app.UseHttpsRedirection();
