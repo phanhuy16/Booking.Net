@@ -73,7 +73,8 @@ namespace BookingApp.Controllers
         // ⭐ Endpoint mới: Tạo Doctor kèm User (dùng cho React Admin)
         [HttpPost("admin/create-with-user")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateDoctorWithUser([FromBody] CreateDoctorWithUserDto dto)
+        [RequestSizeLimit(10_000_000)] // 10MB limit
+        public async Task<IActionResult> CreateDoctorWithUser([FromForm] CreateDoctorWithUserDto dto)
         {
             try
             {
@@ -88,7 +89,8 @@ namespace BookingApp.Controllers
 
         [HttpPost("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] DoctorProfileCreateDto dto)
+        [RequestSizeLimit(10_000_000)] // 10MB
+        public async Task<IActionResult> Create([FromForm] DoctorProfileCreateDto dto)
         {
             var result = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -96,7 +98,8 @@ namespace BookingApp.Controllers
 
         [HttpPut("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] DoctorProfileUpdateDto dto)
+        [RequestSizeLimit(10_000_000)] // 10MB
+        public async Task<IActionResult> Update(int id, [FromForm] DoctorProfileUpdateDto dto)
         {
             if (id != dto.Id)
                 return BadRequest(new { message = "Doctor ID mismatch." });

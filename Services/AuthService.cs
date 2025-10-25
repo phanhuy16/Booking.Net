@@ -1,4 +1,5 @@
-﻿using BookingApp.Data;
+﻿using Azure.Core;
+using BookingApp.Data;
 using BookingApp.DTOs.Auth;
 using BookingApp.Interface.IService;
 using BookingApp.Models;
@@ -220,8 +221,10 @@ namespace BookingApp.Services
                 };
             }
 
-            // Tìm user by email
-            var user = await _userManager.FindByEmailAsync(verifyDto.Email);
+            var user = await _userManager.Users
+                  .Include(u => u.PatientProfile)
+                  .Include(u => u.DoctorProfile)
+                  .FirstOrDefaultAsync(u => u.Email == verifyDto.Email);
 
             if (user == null)
             {
@@ -259,14 +262,23 @@ namespace BookingApp.Services
                 Success = true,
                 UserName = user.UserName!,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token
+                RefreshToken = refreshToken.Token,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Roles = roles,
+                PatientProfileId = user.PatientProfile?.Id,
+                DoctorProfileId = user.DoctorProfile?.Id
             };
         }
 
         // ===== LOGIN =====
         public async Task<ResponseDto> LoginAsync(LoginDto loginDto)
         {
-            var user = await _userManager.FindByEmailAsync(loginDto.Email);
+            var user = await _userManager.Users
+                   .Include(u => u.PatientProfile)
+                   .Include(u => u.DoctorProfile)
+                   .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+
             if (user == null)
             {
                 _logger.LogWarning("Login attempt failed. User {Email} not found.", loginDto.Email);
@@ -309,7 +321,12 @@ namespace BookingApp.Services
                 Success = true,
                 UserName = user.UserName!,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token
+                RefreshToken = refreshToken.Token,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Roles = roles,
+                PatientProfileId = user.PatientProfile?.Id,
+                DoctorProfileId = user.DoctorProfile?.Id
             };
         }
 
@@ -320,7 +337,10 @@ namespace BookingApp.Services
             if (refreshToken == null)
                 return new ResponseDto { Success = false, Errors = new[] { "Invalid refresh token." } };
 
-            var user = await _userManager.FindByIdAsync(refreshToken.UserId.ToString());
+            var user = await _userManager.Users
+                   .Include(u => u.PatientProfile)
+                   .Include(u => u.DoctorProfile)
+                   .FirstOrDefaultAsync(u => u.Id == refreshToken.UserId);
             if (user == null)
                 return new ResponseDto { Success = false, Errors = new[] { "User not found." } };
 
@@ -335,7 +355,12 @@ namespace BookingApp.Services
                 Success = true,
                 UserName = user.UserName!,
                 AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken.Token
+                RefreshToken = newRefreshToken.Token,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Roles = roles,
+                PatientProfileId = user.PatientProfile?.Id,
+                DoctorProfileId = user.DoctorProfile?.Id
             };
         }
 
@@ -352,7 +377,10 @@ namespace BookingApp.Services
                 return new ResponseDto { Success = false, Errors = new[] { "Invalid Google token." } };
             }
 
-            var user = await _userManager.FindByEmailAsync(payload.Email);
+            var user = await _userManager.Users
+                .Include(u => u.PatientProfile)
+                .Include(u => u.DoctorProfile)
+                .FirstOrDefaultAsync(u => u.Email == payload.Email);
 
             if (user == null)
             {
@@ -380,15 +408,20 @@ namespace BookingApp.Services
                 _context.PatientProfiles.Add(patientProfile);
                 await _context.SaveChangesAsync();
 
+                // Reload user with profile
+                user = await _userManager.Users
+                    .Include(u => u.PatientProfile)
+                    .FirstOrDefaultAsync(u => u.Id == user.Id);
+
                 _logger.LogInformation($"New patient account created via Google for {payload.Email}");
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _userManager.GetRolesAsync(user!);
             var ipAddress = GetIpAddress();
-            var accessToken = _tokenService.GenerateToken(user, roles);
-            var refreshToken = await _tokenService.GenerateAsync(user, ipAddress);
+            var accessToken = _tokenService.GenerateToken(user!, roles);
+            var refreshToken = await _tokenService.GenerateAsync(user!, ipAddress);
 
-            user.LastLogin = DateTime.UtcNow;
+            user!.LastLogin = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
 
             return new ResponseDto
@@ -396,7 +429,12 @@ namespace BookingApp.Services
                 Success = true,
                 UserName = user.UserName!,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token
+                RefreshToken = refreshToken.Token,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Roles = roles,
+                PatientProfileId = user.PatientProfile?.Id,
+                DoctorProfileId = user.DoctorProfile?.Id
             };
         }
 

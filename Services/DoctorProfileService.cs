@@ -17,6 +17,7 @@ namespace BookingApp.Services
         private readonly ILogger<DoctorProfileService> _logger;
         private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<IdentityRole<int>> _roleManager;
+        private readonly FirebaseStorageService _firebase;
 
         public DoctorProfileService(
             IDoctorProfileRepository repo,
@@ -24,7 +25,8 @@ namespace BookingApp.Services
             IMapper mapper,
             ILogger<DoctorProfileService> logger,
             UserManager<AppUser> userManager,
-            RoleManager<IdentityRole<int>> roleManager)
+            RoleManager<IdentityRole<int>> roleManager,
+            FirebaseStorageService firebase)
         {
             _repo = repo;
             _context = context;
@@ -32,6 +34,7 @@ namespace BookingApp.Services
             _logger = logger;
             _userManager = userManager;
             _roleManager = roleManager;
+            _firebase = firebase;
         }
 
         public async Task<(IEnumerable<DoctorProfileDto> DoctorProfiles, int TotalCount)> GetAllAsync(
@@ -111,6 +114,13 @@ namespace BookingApp.Services
                 throw new InvalidOperationException("Specialty not found.");
 
             var entity = _mapper.Map<DoctorProfile>(dto);
+
+            // Upload avatar nếu có
+            if (dto.Avatar != null)
+            {
+                entity.AvatarUrl = await _firebase.UploadFileAsync(dto.Avatar, "doctors");
+            }
+
             await _repo.AddAsync(entity);
 
             _logger.LogInformation("Created new doctor profile for user {UserId}", dto.UserId);
@@ -165,7 +175,21 @@ namespace BookingApp.Services
                 throw new InvalidOperationException($"Failed to assign role: {errors}");
             }
 
-            // 5. Tạo DoctorProfile
+            // 5. Upload avatar nếu có
+            string? avatarUrl = null;
+            if (dto.Avatar != null)
+            {
+                try
+                {
+                    avatarUrl = await _firebase.UploadFileAsync(dto.Avatar, "doctors");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to upload avatar, continuing without avatar");
+                }
+            }
+
+            // 6. Tạo DoctorProfile
             var profile = new DoctorProfile
             {
                 UserId = user.Id,
@@ -173,6 +197,8 @@ namespace BookingApp.Services
                 ExperienceYears = dto.ExperienceYears,
                 Description = dto.Description,
                 Workplace = dto.Workplace,
+                AvatarUrl = avatarUrl,
+                ConsultationFee = dto.ConsultationFee,
                 AverageRating = 0,
                 TotalFeedbacks = 0
             };
@@ -187,6 +213,10 @@ namespace BookingApp.Services
             {
                 // Rollback: xóa user nếu tạo profile thất bại
                 await _userManager.DeleteAsync(user);
+                if (avatarUrl != null)
+                {
+                    await _firebase.DeleteFileAsync(avatarUrl);
+                }
                 _logger.LogError(ex, "Failed to create doctor profile, rolled back user creation");
                 throw new InvalidOperationException("Failed to create doctor profile", ex);
             }
@@ -198,7 +228,44 @@ namespace BookingApp.Services
             if (existing == null)
                 throw new KeyNotFoundException("Doctor profile not found.");
 
-            _mapper.Map(dto, existing);
+            // Update user info
+            var user = await _userManager.FindByIdAsync(existing.UserId.ToString());
+            if (user != null)
+            {
+                user.FullName = dto.FullName;
+                user.Email = dto.Email;
+                user.PhoneNumber = dto.Phone;
+
+                // Update password nếu có
+                if (!string.IsNullOrEmpty(dto.Password))
+                {
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    await _userManager.ResetPasswordAsync(user, token, dto.Password);
+                }
+
+                await _userManager.UpdateAsync(user);
+            }
+
+            // Update avatar nếu có upload mới
+            if (dto.Avatar != null)
+            {
+                // Xóa avatar cũ
+                if (!string.IsNullOrEmpty(existing.AvatarUrl))
+                {
+                    await _firebase.DeleteFileAsync(existing.AvatarUrl);
+                }
+
+                // Upload avatar mới
+                existing.AvatarUrl = await _firebase.UploadFileAsync(dto.Avatar, "doctors");
+            }
+
+            // Update profile fields
+            existing.SpecialtyId = dto.SpecialtyId;
+            existing.ExperienceYears = dto.ExperienceYears;
+            existing.Description = dto.Description;
+            existing.Workplace = dto.Workplace;
+            existing.ConsultationFee = dto.ConsultationFee;
+
             await _repo.UpdateAsync(existing);
 
             _logger.LogInformation("Updated doctor profile {Id}", id);
@@ -212,9 +279,17 @@ namespace BookingApp.Services
                 throw new KeyNotFoundException("Doctor profile not found.");
 
             // Kiểm tra có booking đang hoạt động
-            bool hasActiveBookings = await _context.Bookings.AnyAsync(b => b.DoctorId == id && b.Status != BookingStatus.Cancelled);
+            bool hasActiveBookings = await _context.Bookings.AnyAsync(
+                b => b.DoctorId == id && b.Status != BookingStatus.Cancelled);
+
             if (hasActiveBookings)
                 throw new InvalidOperationException("Cannot delete doctor with active bookings.");
+
+            // Xóa avatar từ Firebase
+            if (!string.IsNullOrEmpty(existing.AvatarUrl))
+            {
+                await _firebase.DeleteFileAsync(existing.AvatarUrl);
+            }
 
             await _repo.DeleteAsync(existing);
             _logger.LogInformation("Deleted doctor profile {Id}", id);

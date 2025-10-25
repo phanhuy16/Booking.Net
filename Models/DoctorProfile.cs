@@ -20,6 +20,9 @@ namespace BookingApp.Models
         public string Workplace { get; set; } = string.Empty;
         public double AverageRating { get; set; } = 0;
         public int TotalFeedbacks { get; set; } = 0;
+        public string? AvatarUrl { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ConsultationFee { get; set; }    
 
         // relationships
         public AppUser User { get; set; } = null!;

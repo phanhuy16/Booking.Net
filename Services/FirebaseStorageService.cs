@@ -26,7 +26,10 @@ namespace BookingApp.Services
             var objectName = $"{folder}/{Guid.NewGuid()}_{file.FileName}";
             using var stream = file.OpenReadStream();
 
-            await _storageClient.UploadObjectAsync(_bucketName, objectName, null, stream);
+            await _storageClient.UploadObjectAsync(_bucketName, objectName, null, stream, new UploadObjectOptions
+            {
+                PredefinedAcl = PredefinedObjectAcl.PublicRead // 👈 Cho phép file này public
+            });
             _logger.LogInformation("Uploaded {FileName} to Firebase Storage as {ObjectName}", file.FileName, objectName);
 
             // 🔗 Tạo public URL (nếu bucket cho phép public read)

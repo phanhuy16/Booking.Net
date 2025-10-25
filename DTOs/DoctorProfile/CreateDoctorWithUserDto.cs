@@ -28,5 +28,8 @@ namespace BookingApp.DTOs.DoctorProfile
 
         [StringLength(200)]
         public string Workplace { get; set; } = string.Empty;
+        public decimal ConsultationFee { get; set; }
+
+        public IFormFile? Avatar { get; set; }
     }
 }
